@@ -1,7 +1,7 @@
 {
     "name": "Route Optimizer",
     "short_name": "RouteOpt",
-    "description": "A route optimization application",
+    "description": "A route optimization app",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
