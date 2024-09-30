@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
         console.log("File received:", file.name);
 
-        // Read file content as text
+       
         const content = await file.text();
 
         console.log("File content (first 100 chars):", content.substring(0, 100));
@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
         // Connect to MongoDB
         console.log("Connecting to MongoDB...");
         const client = await MongoClient.connect(process.env.MONGODB_URI as string);
-        const db = client.db('test'); // Replace 'test' with your actual database name
+        const db = client.db('test'); 
 
-        // Insert the CSV data into the 'csvUploads' collection
+       
         console.log("Inserting data into MongoDB...");
         const result = await db.collection('csvUploads').insertOne({
             filename: file.name,

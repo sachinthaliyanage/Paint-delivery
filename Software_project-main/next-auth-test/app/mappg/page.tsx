@@ -43,7 +43,7 @@ const MapComponent: React.FC = () => {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapSize, setMapSize] = useState({ width: "100%", height: "500px" });
+  const [mapSize, setMapSize] = useState({ width: "1200px", height: "500px" });
 
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
@@ -70,7 +70,7 @@ const MapComponent: React.FC = () => {
     if (file) {
       setCsvFile(file);
 
-      // Upload the file to the server
+     
       const formData = new FormData();
       formData.append('file', file);
 
@@ -82,7 +82,7 @@ const MapComponent: React.FC = () => {
 
         if (response.ok) {
           console.log('File uploaded successfully');
-          // Process the CSV file
+          
           const reader = new FileReader();
           reader.onload = async (e) => {
             const csv = e.target?.result as string;

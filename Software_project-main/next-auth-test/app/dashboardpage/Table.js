@@ -69,7 +69,7 @@ function Tables({columns, dataSource }) {
                     {row.date}
                   </Typography>
                 </td>
-                {/* Uncomment this section if you want the Edit link */}
+                
                 {/* <td className="p-4">
                   <Typography as="a" href="#" variant="small" color="blue-gray" className="font-medium">
                     Edit

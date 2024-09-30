@@ -12,7 +12,7 @@ function LoggedHeader() {
   };
 
   const handleHomeClick = () => {
-    router.push('/');  // Assuming '/' is your home page route
+    router.push('/');  
   };
 
   return (

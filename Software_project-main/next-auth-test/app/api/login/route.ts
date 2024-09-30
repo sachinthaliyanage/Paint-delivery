@@ -22,17 +22,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
-    // Generate JWT token
-    const expiresIn = rememberMe ? '30d' : '1h'; // 30 days if remember me is checked, otherwise 1 hour
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn });
+    const expiresIn = rememberMe ? '30d' : '1h'; 
+    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn });
 
-    // Create response
     const response = NextResponse.json(
-      { message: 'Login successful' },
+      { message: 'Login successful', role: user.role },
       { status: 200 }
     );
 
-    // Set HTTP-only cookie
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',

@@ -1,29 +1,30 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/app/lib/mongodb';
+import { connectMongoDB } from '@/lib/mongodb';
+import User from '@/models/user';
 import bcrypt from 'bcrypt';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
-    const { db } = await connectToDatabase();
+    const { name, email, password, role = 'driver' } = await req.json();
+    await connectMongoDB();
 
-    // Check if user already exists
-    const existingUser = await db.collection('users').findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
 
-    // Hash the password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create new user
-    const result = await db.collection('users').insertOne({
+    const newUser = new User({
       name,
       email,
       password: hashedPassword,
+      role,
       createdAt: new Date(),
     });
+
+    await newUser.save();
 
     return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
   } catch (error) {

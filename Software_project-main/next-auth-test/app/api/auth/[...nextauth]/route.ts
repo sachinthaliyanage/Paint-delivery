@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { connectMongoDB } from "@/lib/mongodb";
 import User from "../../../../models/user";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 export const authOptions = {
   providers: [
@@ -27,7 +27,12 @@ export const authOptions = {
             return null;
           }
 
-          return user;
+          return {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+          };
         } catch (error) {
           console.log("Error: ", error);
           return null;
@@ -35,26 +40,28 @@ export const authOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: "/",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user._id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
+  },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: "/",
   },
 };
 

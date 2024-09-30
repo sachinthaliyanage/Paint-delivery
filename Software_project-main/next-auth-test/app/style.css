@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
 
 #root {
-    display: none; /* Initially hide it if not used */
+    display: none; 
 }
 
-/* Use this class if you want to show the root div */
+
 #root.visible {
     display: block;
 }
@@ -116,16 +116,16 @@ header {
     margin-top: 200px;
 }
 
-/* Responsive Design */
 
-/* Tablets and smaller devices */
+
+
 @media (max-width: 768px) {
     .mobile-nav-icon {
-        display: block; /* Show the mobile nav icon */
+        display: block; 
     }
 
     .navigation {
-        display: none; /* Hide navigation by default on small screens */
+        display: none; 
         flex-direction: column;
         position: absolute;
         top: 60px;

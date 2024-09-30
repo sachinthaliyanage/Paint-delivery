@@ -2,6 +2,7 @@
 
 import "../style.css"
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import {
     Card,
@@ -21,27 +22,23 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, rememberMe }),
-      });
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+    });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Successful login
-        router.push('/mappg');
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      const session = await fetch('/api/auth/session').then(res => res.json());
+      if (session?.user?.role === "admin") {
+        router.push("/admin");
+      } else if (session?.user?.role === "driver") {
+        router.push("/driver-map");
       } else {
-        // Failed login
-        setError(data.error || "Login failed: " + response.statusText);
+        router.push("/unauthorized");
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError("An error occurred during login. Please try again.");
     }
   };
 
