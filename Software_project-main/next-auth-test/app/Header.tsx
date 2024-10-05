@@ -19,9 +19,14 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
     router.push('/');
   };
 
-  const handleMappingClick = (e: React.MouseEvent) => {
+  const handleFeaturesClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    router.push('/mappg');
+    router.push('/features');
+  };
+
+  const handleProductsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push('/products');
   };
 
   return (
@@ -35,9 +40,8 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
       </div>
       <nav className={`navigation ${isNavVisible ? "visible" : ""}`}>
         <a href="/" onClick={handleHomeClick}>Home</a>
-        {/* <a href="/mappg" onClick={handleMappingClick}>Mapping</a> */}
-        <a href="#">Features</a>
-        <a href="#">Products</a>
+        <a href="/features" onClick={handleFeaturesClick}>Features</a>
+        <a href="/products" onClick={handleProductsClick}>Products</a>
         <a href="#">Support</a>
         <button className="btnLogin-popup" onClick={onLoginClick}>
           Login
