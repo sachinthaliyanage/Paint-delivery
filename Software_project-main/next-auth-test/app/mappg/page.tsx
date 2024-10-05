@@ -16,6 +16,8 @@ import LoggedHeader from "../LoggedHeader";
 import Footer from "../Footer";
 import { useRouter } from 'next/navigation';
 
+console.log('mappg/page.tsx loaded');
+
 const center = {
   lat: 6.9271,
   lng: 79.8612,
@@ -30,6 +32,7 @@ interface RouteData {
 }
 
 const MapComponent: React.FC = () => {
+  console.log("MapComponent rendered");
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: ["places"],
@@ -45,6 +48,8 @@ const MapComponent: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapSize, setMapSize] = useState({ width: "1200px", height: "500px" });
+  const [fileId, setFileId] = useState<string | null>(null);
+  const [csvWaypoints, setCsvWaypoints] = useState<string[]>([]);
 
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
@@ -57,6 +62,37 @@ const MapComponent: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("useEffect called");
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('fileId');
+    console.log("FileId from URL:", id);
+    if (id) {
+      setFileId(id);
+      // Retrieve CSV data from localStorage
+      const storedData = localStorage.getItem('csvData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        console.log("Retrieved CSV data:", parsedData);
+        setCsvWaypoints(parsedData.waypoints);
+
+        // Update tableData
+        const newTableData = parsedData.waypoints.map((waypoint: string, index: number) => ({
+          key: index,
+          deliveryDate: new Date().toISOString().split('T')[0], // You might want to adjust this if you have actual delivery dates
+          location: waypoint,
+        }));
+        setTableData(newTableData);
+
+        // Clear the data from localStorage after retrieving it
+        localStorage.removeItem('csvData');
+        
+        // Call getOptimizedRoute with the retrieved waypoints
+        getOptimizedRoute(parsedData.waypoints);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 960);
       updateMapSize();
@@ -66,63 +102,118 @@ const MapComponent: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const fetchFileFromDatabase = async (id: string) => {
+    console.log("fetchFileFromDatabase called with id:", id);
+    try {
+      const response = await fetch(`/api/get-file-data?fileId=${id}`);
+      console.log("API response received:", response.status);
+      if (response.ok) {
+        const fileData = await response.json();
+        console.log("File data received:", fileData);
+        
+        if (!fileData.content) {
+          console.error("File content is missing");
+          return;
+        }
+        
+        // Create a File object from the fetched data
+        const blob = new Blob([atob(fileData.content)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const file = new File([blob], fileData.filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        console.log("Created File object:", file);
+        
+        // Call handleFileUpload with the created File object
+        handleFileUpload({ target: { files: [file] } } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        console.error('Failed to fetch file data. Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+      }
+    } catch (error) {
+      console.error('Error fetching file data:', error);
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log("File to upload:", file.name, file.size, file.type);
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append('file', file);
 
       try {
         // Send the file to the server
+        console.log("Sending file to server...");
         const response = await fetch('/api/upload-csv', {
           method: 'POST',
           body: formData,
         });
 
+        console.log("Upload response status:", response.status);
         if (response.ok) {
           const result = await response.json();
           console.log('File uploaded successfully:', result);
-          // Process the file for display as before
+          // Process the file for display
           processFileForDisplay(file);
         } else {
-          console.error('Failed to upload file');
+          console.error('Failed to upload file. Status:', response.status);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
         }
       } catch (error) {
         console.error('Error uploading file:', error);
       }
+    } else {
+      console.error("No file selected");
     }
   };
 
-  // New function to process the file for display
   const processFileForDisplay = (file: File) => {
+    console.log("Processing file for display:", file.name, file.size, file.type);
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = e.target?.result;
       if (data) {
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json<RouteData>(sheet, { header: 1 });
+        console.log("File data loaded, length:", (data as ArrayBuffer).byteLength);
+        try {
+          const workbook = XLSX.read(data, { type: "array" });
+          console.log("Workbook sheets:", workbook.SheetNames);
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json<RouteData>(sheet, { header: 1 });
 
-        // Parse the locations starting from the second row (skip header)
-        const waypoints = jsonData.slice(1).map((row: any) => row[1]); // Assuming location data is in the second column
+          console.log("Parsed JSON data (first 5 rows):", jsonData.slice(0, 5));
 
-        setTableData(
-          jsonData.slice(1).map((row: any) => ({
-            deliveryDate: row[0],
-            location: row[1],
-          }))
-        );
+          // Parse the locations starting from the second row (skip header)
+          const waypoints = jsonData.slice(1).map((row: any) => row[1]); // Assuming location data is in the second column
 
-        // Call optimized route calculation using the waypoints
-        getOptimizedRoute(waypoints);
+          console.log("Extracted waypoints (first 5):", waypoints.slice(0, 5));
+
+          setTableData(
+            jsonData.slice(1).map((row: any) => ({
+              deliveryDate: row[0],
+              location: row[1],
+            }))
+          );
+
+          // Call optimized route calculation using the waypoints
+          getOptimizedRoute(waypoints);
+        } catch (error) {
+          console.error("Error processing file:", error);
+        }
+      } else {
+        console.error("No data loaded from file");
       }
     };
-    reader.readAsBinaryString(file);
+    reader.onerror = (error) => {
+      console.error("FileReader error:", error);
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const getOptimizedRoute = async (waypointArray: string[]) => {
+    console.log("Getting optimized route for waypoints:", waypointArray);
     const departureTime = Math.floor(Date.now() / 1000);
     const directionsResponse = await fetch("/api/get-directions", {
       method: "POST",
@@ -220,6 +311,15 @@ const MapComponent: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleFetchFile = () => {
+    console.log("Fetch file button clicked");
+    if (fileId) {
+      fetchFileFromDatabase(fileId);
+    } else {
+      console.log("No fileId available");
+    }
+  };
+
   if (!isLoaded) return <div>Loading...</div>;
 
   const columns = [
@@ -288,6 +388,7 @@ const MapComponent: React.FC = () => {
             accept=".xlsx"
             style={{ display: "none" }}
           />
+          {/* <button onClick={handleFetchFile}>Fetch File</button> */}
           <div className="relative flex justify-center items-center" ref={mapRef}>
             <GoogleMap
               center={center}
@@ -306,11 +407,21 @@ const MapComponent: React.FC = () => {
             </GoogleMap>
           </div>
           <div>
-            <h2>Route Information</h2>
+            <h2> </h2>
             <Table dataSource={tableData} columns={columns} />
             <h2>Optimized Route</h2>
             <Table dataSource={optimizedRouteData} columns={optimizedRouteColumns} />
           </div>
+          {/* {csvWaypoints.length > 0 && (
+            <div>
+              <h2>CSV Waypoints</h2>
+              <ul>
+                {csvWaypoints.map((waypoint, index) => (
+                  <li key={index}>{waypoint}</li>
+                ))}
+              </ul>
+            </div>
+          )} */}
         </div>
       </div>
       <Footer handleHomeClick={handleHomeClick} />

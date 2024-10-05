@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ handleLogout, handleAddCsvClick }) =>
     <div className="h-[calc(100vh-2rem)] w-full max-w-[15rem] p-4 shadow-xl shadow-blue-gray-900/5">
       <div className="mb-2 p-4">
         <Typography variant="h5" color="blue-gray">
-          Sidebar
+          
         </Typography>
       </div>
       <List>
@@ -52,16 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ handleLogout, handleAddCsvClick }) =>
           Log Out
         </ListItem>
       </List>
-      <button onClick={triggerFileInput} className="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
-        Upload CSV
-      </button>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleAddCsvClick}
-        accept=".csv,.xlsx"
-        style={{ display: 'none' }}
-      />
+      
     </div>
   );
 };

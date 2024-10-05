@@ -1,25 +1,34 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getToken } from "next-auth/jwt"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  // console.log("Middleware executed for path:", request.nextUrl.pathname);
+
   const path = request.nextUrl.pathname
 
-  const isProtectedPath = path === '/mappg'
+  if (path === '/mappg' || path.startsWith('/mappg/')) {
+    // console.log("Handling /mappg route");
+    const token = await getToken({ req: request })
+    // console.log("Token:", token);
 
-  const token = request.cookies.get('token')?.value || ''
+    if (!token) {
+      console.log("No token found, redirecting to login");
+      return NextResponse.redirect(new URL('/login', request.nextUrl))
+    }
+  }
 
-  // if (isProtectedPath && !token) {
-  //   return NextResponse.redirect(new URL('/login', request.nextUrl))
-  // }
-
-  console.log(  "token" , token);
+  // console.log("Continuing to requested page");
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     '/mappg',
     '/mappg/:path*',
-    '/history'
-    ]
+    '/admin',
+    '/unauthorized',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ]
 }
 

@@ -46,8 +46,35 @@ export default function History() {
         router.push('/mappg');
     };
 
-    const handleFilenameClick = (fileId: string) => {
-        router.push(`/mappg?fileId=${fileId}`);
+    const handleFilenameClick = async (fileId: string) => {
+        console.log('Function called with fileId:', fileId);
+        try {
+            console.log('Fetching data for fileId:', fileId);
+            const response = await fetch(`/api/get-file-data?fileId=${fileId}`);
+            
+            console.log('Response received:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch CSV data: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Data received:', data);
+            
+            // Log specific parts of the data
+            console.log('Filename:', data.filename);
+            console.log('Upload date:', data.uploadedAt);
+            console.log('Number of waypoints:', data.waypoints.length);
+            console.log('First waypoint:', data.waypoints[0]);
+
+            // Store the data in localStorage for use in the mappg page
+            localStorage.setItem('csvData', JSON.stringify(data));
+
+            // Route to the mappg page
+            router.push(`/mappg?fileId=${fileId}`);
+        } catch (error) {
+            console.error('Error in handleFilenameClick:', error);
+        }
     };
 
     const filenameBodyTemplate = (rowData: CSVUpload) => {
