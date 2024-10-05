@@ -69,31 +69,57 @@ const MapComponent: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = e.target?.result;
-        if (data) {
-          const workbook = XLSX.read(data, { type: "binary" });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json<RouteData>(sheet, { header: 1 });
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append('file', file);
 
-          // Parse the locations starting from the second row (skip header)
-          const waypoints = jsonData.slice(1).map((row: any) => row[1]); // Assuming location data is in the second column
+      try {
+        // Send the file to the server
+        const response = await fetch('/api/upload-csv', {
+          method: 'POST',
+          body: formData,
+        });
 
-          setTableData(
-            jsonData.slice(1).map((row: any) => ({
-              deliveryDate: row[0],
-              location: row[1],
-            }))
-          );
-
-          // Call optimized route calculation using the waypoints
-          getOptimizedRoute(waypoints);
+        if (response.ok) {
+          const result = await response.json();
+          console.log('File uploaded successfully:', result);
+          // Process the file for display as before
+          processFileForDisplay(file);
+        } else {
+          console.error('Failed to upload file');
         }
-      };
-      reader.readAsBinaryString(file);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
     }
+  };
+
+  // New function to process the file for display
+  const processFileForDisplay = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = e.target?.result;
+      if (data) {
+        const workbook = XLSX.read(data, { type: "binary" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json<RouteData>(sheet, { header: 1 });
+
+        // Parse the locations starting from the second row (skip header)
+        const waypoints = jsonData.slice(1).map((row: any) => row[1]); // Assuming location data is in the second column
+
+        setTableData(
+          jsonData.slice(1).map((row: any) => ({
+            deliveryDate: row[0],
+            location: row[1],
+          }))
+        );
+
+        // Call optimized route calculation using the waypoints
+        getOptimizedRoute(waypoints);
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   const getOptimizedRoute = async (waypointArray: string[]) => {

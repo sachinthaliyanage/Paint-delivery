@@ -6,6 +6,7 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/solid";
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 
 interface SidebarProps {
   handleLogout: () => void;
@@ -14,9 +15,14 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ handleLogout, handleAddCsvClick }) => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleHistoryClick = () => {
     router.push('/history');
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -46,6 +52,16 @@ const Sidebar: React.FC<SidebarProps> = ({ handleLogout, handleAddCsvClick }) =>
           Log Out
         </ListItem>
       </List>
+      <button onClick={triggerFileInput} className="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white">
+        Upload CSV
+      </button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleAddCsvClick}
+        accept=".csv,.xlsx"
+        style={{ display: 'none' }}
+      />
     </div>
   );
 };
