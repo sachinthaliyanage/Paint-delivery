@@ -46,6 +46,23 @@ export default function History() {
         router.push('/mappg');
     };
 
+    const handleFilenameClick = (fileId: string) => {
+        router.push(`/mappg?fileId=${fileId}`);
+    };
+
+    const filenameBodyTemplate = (rowData: CSVUpload) => {
+        return (
+            <Button
+                color="blue"
+                variant="text"
+                className="p-0 underline"
+                onClick={() => handleFilenameClick(rowData._id)}
+            >
+                {rowData.filename}
+            </Button>
+        );
+    };
+
     if (isLoading) {
         return <div>Loading...</div>;
     }
@@ -69,7 +86,7 @@ export default function History() {
                     </Typography>
                     <DataTable value={csvUploads} paginator rows={10} dataKey="_id" 
                                emptyMessage="No CSV uploads found" className="p-datatable-sm">
-                        <Column field="filename" header="Filename" sortable></Column>
+                        <Column field="filename" header="Filename" body={filenameBodyTemplate} sortable></Column>
                         <Column field="uploadedAt" header="Upload Date" body={dateBodyTemplate} sortable></Column>
                     </DataTable>
                 </Card>
