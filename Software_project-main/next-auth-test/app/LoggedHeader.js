@@ -12,7 +12,7 @@ function LoggedHeader() {
   };
 
   const handleHomeClick = () => {
-    router.push('/');  
+    router.push('/mappg');  
   };
 
   return (

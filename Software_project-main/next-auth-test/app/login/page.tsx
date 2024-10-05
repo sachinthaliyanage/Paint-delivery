@@ -32,6 +32,7 @@ const LoginForm: React.FC = () => {
       setError(result.error);
     } else {
       const session = await fetch('/api/auth/session').then(res => res.json());
+      console.log(  "session" , session);
       if (session?.user?.role === "admin") {
         router.push("/admin");
       } else if (session?.user?.role === "driver") {

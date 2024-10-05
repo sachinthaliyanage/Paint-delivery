@@ -7,10 +7,10 @@ import {
   DirectionsRenderer,
   Marker,
 } from "@react-google-maps/api";
-import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { IconButton, Drawer, Button } from "@material-tailwind/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import Sidebar from '../dashboardpage/Sidebar'
+import Sidebar from '../dashboardpage/Sidebar';
 import { Table } from 'antd';
 import LoggedHeader from "../LoggedHeader";
 import Footer from "../Footer";
@@ -21,10 +21,12 @@ const center = {
   lng: 79.8612,
 };
 
+// Set constant origin and destination address
+const ORIGIN_DESTINATION_ADDRESS = "357 Negombo - Colombo Main Rd, Negombo 11500";
+
 interface RouteData {
-  origin: string;
-  destination: string;
-  waypoint: string;
+  deliveryDate: string;
+  location: string;
 }
 
 const MapComponent: React.FC = () => {
@@ -34,7 +36,6 @@ const MapComponent: React.FC = () => {
   });
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [tableData, setTableData] = useState<RouteData[]>([]);
   const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>([]);
   const [optimizedRouteData, setOptimizedRouteData] = useState<any[]>([]);
@@ -55,7 +56,7 @@ const MapComponent: React.FC = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 960);
       updateMapSize();
@@ -68,121 +69,116 @@ const MapComponent: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setCsvFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = e.target?.result;
+        if (data) {
+          const workbook = XLSX.read(data, { type: "binary" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json<RouteData>(sheet, { header: 1 });
 
-     
-      const formData = new FormData();
-      formData.append('file', file);
+          // Parse the locations starting from the second row (skip header)
+          const waypoints = jsonData.slice(1).map((row: any) => row[1]); // Assuming location data is in the second column
 
-      try {
-        const response = await fetch('/api/upload-csv', {
-          method: 'POST',
-          body: formData,
-        });
+          setTableData(
+            jsonData.slice(1).map((row: any) => ({
+              deliveryDate: row[0],
+              location: row[1],
+            }))
+          );
 
-        if (response.ok) {
-          console.log('File uploaded successfully');
-          
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            const csv = e.target?.result as string;
-            Papa.parse<RouteData>(csv, {
-              header: true,
-              complete: async (results) => {
-                const data = results.data;
-                setTableData(data);
-
-                const waypoints = new Set<string>();
-                data.forEach((route) => {
-                  waypoints.add(route.origin);
-                  waypoints.add(route.destination);
-                  route.waypoint.split('|').forEach(wp => waypoints.add(wp));
-                });
-                const waypointArray = Array.from(waypoints);
-
-                const departureTime = Math.floor(Date.now() / 1000);
-                const directionsResponse = await fetch("/api/get-directions", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ waypoints: waypointArray, departureTime }),
-                });
-
-                const distanceMatrixData = await directionsResponse.json();
-
-                const tspRoute = [0];
-                const visited = new Array(waypointArray.length).fill(false);
-                visited[0] = true;
-
-                for (let i = 0; i < waypointArray.length - 1; i++) {
-                  let last = tspRoute[tspRoute.length - 1];
-                  let nearest = -1;
-                  let nearestTime = Number.MAX_VALUE;
-
-                  distanceMatrixData.rows[last].elements.forEach(
-                    (element: any, index: number) => {
-                      if (!visited[index] && element.duration_in_traffic.value < nearestTime) {
-                        nearest = index;
-                        nearestTime = element.duration_in_traffic.value;
-                      }
-                    }
-                  );
-
-                  tspRoute.push(nearest);
-                  visited[nearest] = true;
-                }
-
-                const optimizedRoute = tspRoute.map(index => waypointArray[index]);
-
-                const validRoute = optimizedRoute.map(location => {
-                  const [lat, lng] = location.split(',').map(Number);
-                  if (!isNaN(lat) && !isNaN(lng)) {
-                    return { lat, lng };
-                  }
-                  throw new Error('Invalid location format');
-                });
-
-                const directionsService = new google.maps.DirectionsService();
-                directionsService.route(
-                  {
-                    origin: validRoute[0],
-                    destination: validRoute[validRoute.length - 1],
-                    waypoints: validRoute.slice(1, -1).map((location) => ({ location, stopover: true })),
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    drivingOptions: {
-                      departureTime: new Date(),
-                      trafficModel: google.maps.TrafficModel.BEST_GUESS,
-                    },
-                  },
-                  (result, status) => {
-                    if (status === google.maps.DirectionsStatus.OK && result) {
-                      setDirections(result);
-                      setOptimizedRouteData(result.routes[0].legs.map((leg, index) => ({
-                        key: index,
-                        start: leg.start_address,
-                        end: leg.end_address,
-                        distance: leg.distance?.text,
-                        duration: leg.duration?.text,
-                      })));
-                    } else {
-                      console.error(`Error fetching directions: ${status}`, result);
-                    }
-                  }
-                );
-
-                setMarkers(validRoute);
-              },
-            });
-          };
-          reader.readAsText(file);
-        } else {
-          console.error('File upload failed');
+          // Call optimized route calculation using the waypoints
+          getOptimizedRoute(waypoints);
         }
-      } catch (error) {
-        console.error('Error uploading file:', error);
-      }
+      };
+      reader.readAsBinaryString(file);
     }
+  };
+
+  const getOptimizedRoute = async (waypointArray: string[]) => {
+    const departureTime = Math.floor(Date.now() / 1000);
+    const directionsResponse = await fetch("/api/get-directions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ waypoints: waypointArray, departureTime }),
+    });
+
+    const distanceMatrixData = await directionsResponse.json();
+
+    const tspRoute = [0];
+    const visited = new Array(waypointArray.length).fill(false);
+    visited[0] = true;
+
+    for (let i = 0; i < waypointArray.length - 1; i++) {
+      let last = tspRoute[tspRoute.length - 1];
+      let nearest = -1;
+      let nearestTime = Number.MAX_VALUE;
+
+      distanceMatrixData.rows[last].elements.forEach(
+        (element: any, index: number) => {
+          if (!visited[index] && element.duration_in_traffic.value < nearestTime) {
+            nearest = index;
+            nearestTime = element.duration_in_traffic.value;
+          }
+        }
+      );
+
+      tspRoute.push(nearest);
+      visited[nearest] = true;
+    }
+
+    const optimizedRoute = tspRoute.map((index) => waypointArray[index]);
+
+    const validRoute = [ORIGIN_DESTINATION_ADDRESS, ...optimizedRoute, ORIGIN_DESTINATION_ADDRESS];
+
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: ORIGIN_DESTINATION_ADDRESS,
+        destination: ORIGIN_DESTINATION_ADDRESS,
+        waypoints: validRoute.slice(1, -1).map((location) => ({
+          location,
+          stopover: true,
+        })),
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: {
+          departureTime: new Date(),
+          trafficModel: google.maps.TrafficModel.BEST_GUESS,
+        },
+      },
+      (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK && result) {
+          setDirections(result);
+          setOptimizedRouteData(
+            result.routes[0].legs.map((leg, index) => ({
+              key: index,
+              start: leg.start_address,
+              end: leg.end_address,
+              distance: leg.distance?.text,
+              duration: leg.duration?.text,
+            }))
+          );
+        } else {
+          console.error(`Error fetching directions: ${status}`, result);
+        }
+      }
+    );
+
+    // Set markers based on optimized route
+    const geocoder = new google.maps.Geocoder();
+    validRoute.forEach((address) => {
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results) {
+          const location = results[0].geometry.location;
+          setMarkers((prevMarkers) => [...prevMarkers, { lat: location.lat(), lng: location.lng() }]);
+        } else {
+          console.error(`Geocoding error: ${status}`);
+        }
+      });
+    });
   };
 
   const handleLogout = async () => {
@@ -191,7 +187,7 @@ const MapComponent: React.FC = () => {
   };
 
   const handleHomeClick = () => {
-    router.push('/');
+    router.push('/admin');
   };
 
   const handleAddCsvClick = () => {
@@ -202,19 +198,14 @@ const MapComponent: React.FC = () => {
 
   const columns = [
     {
-      title: 'Origin',
-      dataIndex: 'origin',
-      key: 'origin',
+      title: 'Delivery Date',
+      dataIndex: 'deliveryDate',
+      key: 'deliveryDate',
     },
     {
-      title: 'Destination',
-      dataIndex: 'destination',
-      key: 'destination',
-    },
-    {
-      title: 'Waypoint',
-      dataIndex: 'waypoint',
-      key: 'waypoint',
+      title: 'Location',
+      dataIndex: 'location',
+      key: 'location',
     },
   ];
 
@@ -244,7 +235,7 @@ const MapComponent: React.FC = () => {
   return (
     <>
       <LoggedHeader />
-      <div className="flex h-[calc(100vh-70px)]" style={{marginTop:"70px"}}>
+      <div className="flex h-[calc(100vh-70px)]" style={{ marginTop: "70px" }}>
         {isMobile ? (
           <div>
             <IconButton variant="text" size="lg" onClick={openDrawer}>
@@ -264,44 +255,39 @@ const MapComponent: React.FC = () => {
           </div>
         )}
         <div className="flex-grow p-4 overflow-y-auto">
-          
           <input
             type="file"
-            accept=".csv"
             ref={fileInputRef}
-            style={{ display: 'none' }}
             onChange={handleFileUpload}
+            accept=".xlsx"
+            style={{ display: "none" }}
           />
-          <div className="w-full" ref={mapRef}>
-            <GoogleMap mapContainerStyle={mapSize} center={center} zoom={10}>
+          <div className="relative flex justify-center items-center" ref={mapRef}>
+            <GoogleMap
+              center={center}
+              zoom={12}
+              mapContainerStyle={mapSize}
+              options={{
+                streetViewControl: false,
+                mapTypeControl: false,
+                fullscreenControl: false,
+              }}
+            >
               {directions && <DirectionsRenderer directions={directions} />}
               {markers.map((marker, index) => (
                 <Marker key={index} position={marker} />
               ))}
             </GoogleMap>
           </div>
-          <div className="mt-8 overflow-x-auto">
-            <Table 
-              columns={columns} 
-              dataSource={tableData} 
-              rowKey="origin" 
-              style={{ marginTop: '20px' }} 
-              title={() => 'Original Route Data'}
-              scroll={{ x: true }}
-            />
-          </div>
-          <div className="mt-8 overflow-x-auto">
-            <Table 
-              columns={optimizedRouteColumns} 
-              dataSource={optimizedRouteData} 
-              style={{ marginTop: '20px' }} 
-              title={() => 'Optimized Route Data'}
-              scroll={{ x: true }}
-            />
+          <div>
+            <h2>Route Information</h2>
+            <Table dataSource={tableData} columns={columns} />
+            <h2>Optimized Route</h2>
+            <Table dataSource={optimizedRouteData} columns={optimizedRouteColumns} />
           </div>
         </div>
       </div>
-      <Footer/>
+      <Footer handleHomeClick={handleHomeClick} />
     </>
   );
 };

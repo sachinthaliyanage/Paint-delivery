@@ -1,65 +1,66 @@
+
 import { Typography } from "@material-tailwind/react";
- 
+
 const LINKS = [
   {
-    title: "Contact us",
-    items: ["S Bandula Paint Center, Colombo Road, Negombo", "support@paintroutex.com", "0777445448"],
+    title: "Product",
+    items: ["Overview", "Features", "Solutions", "Tutorials"],
   },
   {
-    title: "Product",
-    items: ["Home", "Features", "Products"],
+    title: "Company",
+    items: ["About us", "Careers", "Press", "News"],
   },
   {
     title: "Resource",
-    items: ["Blog", "What's new", "Route Optimization"],
+    items: ["Blog", "Newsletter", "Events", "Help center"],
   },
 ];
- 
+
 const currentYear = new Date().getFullYear();
- 
+
 function Footer() {
   return (
-    <footer className="relative w-full">
+    <footer className="relative w-full bg-gray-900 text-white py-8">
       <div className="mx-auto w-full max-w-7xl px-8">
-        <div className="grid grid-cols-1 justify-between gap-4 md:grid-cols-2">
-          <Typography variant="h5" className="mb-6">
-          PaintRouteX        
-          </Typography>
-          <div className="grid grid-cols-3 justify-between gap-4">
+        <div className="flex flex-wrap justify-between items-center gap-y-6 gap-x-12">
+          <div className="flex items-center gap-x-8">
+            <Typography variant="h5" className="mr-4">
+              PaintRouteX
+            </Typography>
+            <Typography variant="small" className="text-gray-400 max-w-xs">
+              Revolutionizing paint distribution with cutting-edge route optimization technology.
+            </Typography>
+          </div>
+          <div className="flex flex-wrap justify-center gap-y-4 gap-x-8">
             {LINKS.map(({ title, items }) => (
-              <ul key={title}>
-                <Typography
-                  variant="small"
-                  color="blue-gray"
-                  className="mb-3 font-medium opacity-40"
-                >
+              <div key={title} className="flex flex-col items-center">
+                <Typography variant="small" color="white" className="mb-2 font-medium uppercase">
                   {title}
                 </Typography>
-                {items.map((link) => (
-                  <li key={link}>
+                <div className="flex gap-4">
+                  {items.map((link) => (
                     <Typography
+                      key={link}
                       as="a"
                       href="#"
                       color="gray"
-                      className="py-1.5 font-normal transition-colors hover:text-blue-gray-900"
+                      className="font-normal transition-colors hover:text-blue-400"
                     >
                       {link}
                     </Typography>
-                  </li>
-                ))}
-              </ul>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
-        <div className="mt-12 flex w-full flex-col items-center justify-center border-t border-blue-gray-50 py-4 md:flex-row md:justify-between">
-          <Typography
-            variant="small"
-            className="mb-4 text-center font-normal text-blue-gray-900 md:mb-0"
-          >
-            &copy; {currentYear} <a href="https://material-tailwind.com/">PaintRouteX</a>. All
-            Rights Reserved.
+        <hr className="my-6 border-blue-gray-50/10" />
+        <div className="flex flex-wrap items-center justify-between">
+          <Typography variant="small" className="text-center text-blue-gray-100">
+            &copy; {currentYear} PaintRouteX. All Rights Reserved.
           </Typography>
-          <div className="flex gap-4 text-blue-gray-900 sm:justify-center">
+          <div className="flex gap-4 text-white sm:justify-center">
+            {/* Social icons */}
             <Typography as="a" href="#" className="opacity-80 transition-opacity hover:opacity-100">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -107,6 +108,5 @@ function Footer() {
     </footer>
   );
 }
-
 
 export default Footer;

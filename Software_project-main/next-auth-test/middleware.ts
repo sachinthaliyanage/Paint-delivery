@@ -8,9 +8,11 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get('token')?.value || ''
 
-  if (isProtectedPath && !token) {
-    return NextResponse.redirect(new URL('/login', request.nextUrl))
-  }
+  // if (isProtectedPath && !token) {
+  //   return NextResponse.redirect(new URL('/login', request.nextUrl))
+  // }
+
+  console.log(  "token" , token);
 }
 
 export const config = {

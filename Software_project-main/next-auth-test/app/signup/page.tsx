@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 import {
   Card,
   Input,
@@ -12,21 +12,34 @@ import {
   Option,
 } from "@material-tailwind/react";
 
+
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("driver"); // Default role
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const router = useRouter();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setEmailError("");
 
     if (!name || !email || !password || !role) {
       setError("All fields are necessary.");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setEmailError("Please enter a valid email address");
       return;
     }
 
@@ -47,7 +60,7 @@ export default function SignupPage() {
       if (res.ok) {
         const form = e.target as HTMLFormElement;
         form.reset();
-        router.push("/");
+        router.push("/login");
       } else {
         const data = await res.json();
         setError(data.error || "User registration failed.");
@@ -93,6 +106,11 @@ export default function SignupPage() {
               }}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {emailError && (
+              <Typography color="red" className="text-xs">
+                {emailError}
+              </Typography>
+            )}
             <Typography variant="h6" color="blue-gray" className="-mb-3">
               Password
             </Typography>

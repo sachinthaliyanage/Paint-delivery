@@ -38,6 +38,8 @@ export async function POST(req: Request) {
       path: '/',
     });
 
+    console.log(  "token" , token);
+
     return response;
   } catch (error) {
     console.error('Login error:', error);
