@@ -3,6 +3,7 @@
 import React from "react";
 import Header from "./Header";
 import { useRouter } from "next/navigation";
+import Footer from "./Footer";
 
 const Home: React.FC = () => {
     const router = useRouter();
@@ -17,7 +18,7 @@ const Home: React.FC = () => {
 
             <div className="flex flex-wrap justify-center" style={{marginTop:"60px"}}>
                 <div className="flex flex-col items-center justify-center" style={{height:"200px"}}>
-                    <h1 className="text-4xl font-bold text-center text-slate-800 mb-6" style={{color: "#4592A5"}}>Welcome to our vibrant world of premium <br /> paints and colors!</h1>
+                    <h1 className="text-4xl font-bold text-center text-slate-800 mb-6" style={{color: "#4592A5"}}>For any tech support and paint orders,<br /> contact us and we'll be thrilled to assist you.</h1>
                 </div>
                 
                 <div className="flex flex-row" >
@@ -40,7 +41,7 @@ const Home: React.FC = () => {
                     Address:Bandula Paint Center, Colombo Road, Negombo
                     </p>
                 </div>
-                <a class="text-slate-600 leading-normal font-light text-center" href="Email: support@paintroutex.com">
+                <a class="text-slate-600 leading-normal font-light text-center" href="support@paintroutex.com">
                 Email: support@paintroutex.com
                 </a>
                 <p class="text-slate-600 leading-normal font-light text-center">
@@ -50,6 +51,7 @@ const Home: React.FC = () => {
         </div>
                 </div>
             </div>
+            <Footer/>
         </>
     );
 }
