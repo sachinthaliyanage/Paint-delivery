@@ -199,7 +199,7 @@ const Home: React.FC = () => {
 
             <div className="flex flex-wrap justify-center" style={{marginTop:"60px"}}>
                 <div className="flex flex-col items-center justify-center" style={{height:"200px"}}>
-                    <h1 className="text-4xl font-bold text-center text-slate-800 mb-6" style={{color: "#4592A5"}}>For any tech support and paint orders,<br /> contact us and we'll be thrilled to assist.</h1>
+                    <h1 className="text-4xl font-bold text-center text-slate-800 mb-6" style={{color: "#4592A5"}}>For any tech support and paint orders,<br /> contact us and we'll be thrilled to assist you.</h1>
                 </div>
                 
                 <div className="flex flex-row" >
