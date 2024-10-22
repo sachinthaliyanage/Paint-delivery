@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, role = 'driver' } = await req.json();
+    const { name, email, password } = await req.json();
     await connectMongoDB();
 
     const existingUser = await User.findOne({ email });
@@ -20,8 +20,7 @@ export async function POST(req: Request) {
       name,
       email,
       password: hashedPassword,
-      role,
-      createdAt: new Date(),
+      role: 'pending', // Explicitly set the role to 'pending'
     });
 
     await newUser.save();

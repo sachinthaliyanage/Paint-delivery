@@ -28,6 +28,7 @@ export const config = {
     '/mappg/:path*',
     '/admin',
     '/unauthorized',
+    '/waiting',
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ]
 }

@@ -5,6 +5,11 @@ import User from "../../../../models/user";
 import bcrypt from "bcrypt";
 import { Console } from "console";
 
+const ownerCredentials = {
+  email: "owner@example.com",
+  password: "ownerpassword123",
+};
+
 export const authOptions = {
   providers: [
     CredentialsProvider({
@@ -14,6 +19,16 @@ export const authOptions = {
       async authorize(credentials) {
         const { email, password } = credentials;
         
+        // Check for owner credentials
+        if (email === ownerCredentials.email && password === ownerCredentials.password) {
+          return {
+            id: "owner-id",
+            name: "Owner",
+            email: ownerCredentials.email,
+            role: "owner"
+          };
+        }
+
         try {
           await connectMongoDB();
           const user = await User.findOne({ email });
