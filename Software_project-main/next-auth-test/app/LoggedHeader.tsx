@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import "./style.css";
 import { useRouter } from 'next/navigation';
+import { Avatar } from "@material-tailwind/react";
 
-interface HeaderProps {
-  onLoginClick: () => void;
+interface LoggedHeaderProps {
+  handleLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
+const LoggedHeader: React.FC<LoggedHeaderProps> = ({ handleLogout }) => {
   const [isNavVisible, setIsNavVisible] = useState(false);
   const router = useRouter();
 
@@ -34,6 +35,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
     router.push('/support');
   };
 
+
   return (
     <header>
       <div style={{display:"flex", gap:"10px", alignItems:"center"}}>
@@ -48,12 +50,14 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
         <a href="/features" onClick={handleFeaturesClick}>Features</a>
         <a href="/products" onClick={handleProductsClick}>Products</a>
         <a href="/support" onClick={handleSupportClick}>Support</a>
-        <button className="btnLogin-popup" onClick={onLoginClick}>
-          Login
-        </button>
+        <Avatar 
+          src="https://docs.material-tailwind.com/img/face-2.jpg" 
+          alt="avatar" 
+          style={{marginRight:"40px", marginLeft: "20px"}} 
+        />
       </nav>
     </header>
   );
 };
 
-export default Header;
+export default LoggedHeader;

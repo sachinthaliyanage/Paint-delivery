@@ -3,6 +3,11 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import LoggedHeader from "../LoggedHeader";
+import Footer from "../Footer";
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Card, Typography, Button } from "@material-tailwind/react";
 
 interface User {
   _id: string;
@@ -66,55 +71,60 @@ export default function UsersList() {
     router.push('/owner-dashboard');
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/logout');
+    router.push('/');
+  };
+
+  const roleBodyTemplate = (rowData: User) => {
+    return (
+      <select
+        value={rowData.role}
+        onChange={(e) => updateUserRole(rowData._id, e.target.value)}
+        className="border rounded px-2 py-1"
+      >
+        <option value="pending">Pending</option>
+        <option value="admin">Admin</option>
+        <option value="driver">Driver</option>
+      </select>
+    );
+  };
+
   if (status === "loading") {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow container mx-auto p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Users List</h1>
-          <button
-            onClick={handleBackClick}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead>
-              <tr>
-                <th className="py-2 px-4 border-b">Name</th>
-                <th className="py-2 px-4 border-b">Email</th>
-                <th className="py-2 px-4 border-b">Role</th>
-                <th className="py-2 px-4 border-b">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user._id}>
-                  <td className="py-2 px-4 border-b">{user.name}</td>
-                  <td className="py-2 px-4 border-b">{user.email}</td>
-                  <td className="py-2 px-4 border-b">{user.role}</td>
-                  <td className="py-2 px-4 border-b">
-                    <select
-                      value={user.role}
-                      onChange={(e) => updateUserRole(user._id, e.target.value)}
-                      className="border rounded px-2 py-1"
+    <>
+      <LoggedHeader handleLogout={handleLogout} />
+      <div className="min-h-[calc(100vh-140px)] p-4" style={{marginTop:"70px"}}>
+        <div className="mb-4">
+        <Button
+                        color="blue"
+                        className="px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors duration-300 shadow-md"
+                        onClick={handleBackClick}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="admin">Admin</option>
-                      <option value="driver">Driver</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <div style={{display:"flex"}}>
+                        <svg style={{width:"20px", marginRight:"10px"}} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 16.811c0 .864-.933 1.406-1.683.977l-7.108-4.061a1.125 1.125 0 0 1 0-1.954l7.108-4.061A1.125 1.125 0 0 1 21 8.689v8.122ZM11.25 16.811c0 .864-.933 1.406-1.683.977l-7.108-4.061a1.125 1.125 0 0 1 0-1.954l7.108-4.061a1.125 1.125 0 0 1 1.683.977v8.122Z" />
+                        </svg>
+                        <div>Back</div>
+                        </div>
+                    </Button>
         </div>
-      </main>
-    </div>
+        <Card className="h-full w-full overflow-scroll">
+          <Typography variant="h4" color="blue-gray" className="p-4 text-center">
+            Users List
+          </Typography>
+          <DataTable value={users} paginator rows={10} dataKey="_id" 
+                     emptyMessage="No users found" className="p-datatable-sm">
+            <Column field="name" header="Name" sortable></Column>
+            <Column field="email" header="Email" sortable></Column>
+            <Column field="role" header="Role" body={roleBodyTemplate} sortable></Column>
+          </DataTable>
+        </Card>
+      </div>
+      <Footer />
+    </>
   );
 }

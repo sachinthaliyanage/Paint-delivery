@@ -99,7 +99,7 @@ export default function History() {
             <LoggedHeader />
             <div className="min-h-[calc(100vh-140px)] p-4" style={{marginTop:"70px"}}>
                 <div className="mb-4">
-                    <Button
+                <Button
                         color="blue"
                         className="px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors duration-300 shadow-md"
                         onClick={handleBackClick}
